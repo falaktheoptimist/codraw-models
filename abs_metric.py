@@ -179,21 +179,30 @@ def scene_similarity_v2(pred, target):
 
 
 def scene_similarity(pred, target):
-    """
+    """ Computes scene similarity as per Appendix b, page 15 in the paper.
+    
     This version of the scene similarity metric should be monotonic, in the
     sense that adding correct clipart should always increase the score, adding
     incorrect clipart should decrease it, and removing incorrect clipart should
     increase it. It also breaks out the different components of Mike/Jenny:
     flip, expression, and pose; as well as capping distance error at 1.
+    
+    Inputs:
+    pred: Prediction object
+    target: Target object
+    
+    Returns: Scene similarity 
     """
     idx1 = set(x.idx for x in target)
     idx2 = set(x.idx for x in pred)
-    iou = len(idx1 & idx2) / len(idx1 | idx2)
-
-    intersection_size = len(idx1 & idx2)
+    
+    intersection_set = idx1 & idx2
+    intersection_size = len(intersection_set)
     union_size = len(idx1 | idx2)
-
-    common_idxs = list(idx1 & idx2)
+    
+    iou = intersection_size / union_size
+    
+    common_idxs = list(intersection_set)
     match1 = [[x for x in target if x.idx == idx][0] for idx in common_idxs]
     match2 = [[x for x in pred if x.idx == idx][0] for idx in common_idxs]
 
@@ -212,6 +221,10 @@ def scene_similarity(pred, target):
 
     denom[:6] = union_size
 
+    """ Relative positions of objects in the target and predicted scene must be same. Penalizing
+    for cases where object a is to the left of object b in target and to the right in prediction
+    or vice versa. Same checks for y co ordinates.
+    """
     for idx_i in range(len(match1)):
         for idx_j in range(idx_i, len(match1)):
             if idx_i == idx_j:
